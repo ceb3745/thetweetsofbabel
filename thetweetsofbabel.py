@@ -23,8 +23,7 @@ OAUTH_TOKEN = ''
 OAUTH_TOKEN_SECRET = ''
 
 
-words = []
-
+words = ['here', 'is', 'a', 'penguin', 'boi', 'with', 'an', 'orange', 'so', 'you', 'can', 'learn', 'more', 'and', 'id', 'have', 'gotten', 'away', 'it,', 'too,', 'if', 'it', 'werent', 'for', 'those', 'meddling', 'kids', 'how', 'are', 'doing', 'let', 'us', 'try', 'this', 'again', 'cat', 'soft', 'round', 'what', 'do', 'think', 'of', 'my', 'photography', 'read', 'the', 'library', 'babel', 'thanks', 'responding', 'take', 'your', 'time', 'pigeon', 'love', 'i', 'pigeons', 'yay', 'pigeoning', 'hey', 'there', 'were', 'some', 'real', 'words', 'in', 'that', 'boy', 'every', 'tweet', 'will', 'append', 'these', 'to', 'dictionary', 'eat', 'tiny', 'dog', 'now', 'toilet', 'paper', 'tomato', 'soup', 'necessities', 'seen', 'kingdom', 'on', 'netflix', 'good', 'baby', 'pinecones', 'balcony', 'pretty.', 'would', 'like', 'live', 'today', 'bro', 'awake', 'kinds', 'shows', 'who', 'when', 'where', 'why', 'life', 'gives', 'beef,', 'make', 'hamburger', 'look', 'at', 'scarf', 'made', 'his', 'name', 'peanut', 'feel', 'about', 'snow', 'april']
 def getWord():
     num = random.randint(0, len(words) - 1)
     return words[num]
@@ -33,19 +32,23 @@ def gibberish():
     if words:
         print(words)
         arr = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
-               "v", "w", "x", "y", "z", " ", ".", ",", " " + getWord() + " ", " " + getWord() + " ", " " + getWord() + " "]
+               "v", "w", "x", "y", "z", " ", ".", ",", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word", "word"]
     else:
         arr = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
                "v",
                "w", "x", "y", "z", " ", ".", ","]
 
-    num = random.randint(2, 40);
+    num = random.randint(2, 60)
     stringResult = ""
 
     for x in range(0, num):
         index = random.randint(0, len(arr) - 1)
-        stringResult = stringResult + arr[index]
+        if arr[index] == "word":
+            stringResult = stringResult + " " + getWord() + " "
+        else:
+            stringResult = stringResult + arr[index]
 
+    print(stringResult)
     return stringResult
 
 def fix_message(str):
@@ -69,6 +72,8 @@ def fix_message(str):
         if word not in words:
             words.append(word)
 
+    print(words)
+
     return finalMsg + " "
 
 
@@ -86,7 +91,7 @@ def tweet_image(api, url, message):
     else:
         print("Unable to download image")
 
-tweetIds = [];
+tweetIds = []
 
 while(True):
     # connect to the TWitter API using your app's credentials
@@ -100,6 +105,7 @@ while(True):
     tweepyAPI = tweepy.API(auth)
 
     max_id = -1
+    count = 0;
 
     maxTweets = 1
 
@@ -110,6 +116,7 @@ while(True):
     q = searchQuery + retweet_filter
     tweetsPerQry = 2
     sinceId = None
+    flagNoTweets = True
 
     print("Downloading max {0} tweets".format(maxTweets))
     with open(fName, 'w') as f:
@@ -132,16 +139,23 @@ while(True):
                 if not new_tweets:
                     print("No more tweets found")
                     break
+
                 for tweet in new_tweets:
                     flag = False
+
                     tweetJson = tweet._json
                     checkReplies = tweepyAPI.search(q="@"+tweetJson.get("user").get("screen_name") +  ' -filter:retweets from:CryptoLdeaTest', count=tweetsPerQry,
                                                   max_id=str(max_id - 1),
                                                   since_id=None, tweet_mode='extended')
                     for reply in checkReplies:
                         replyJson = reply._json
-
                         message = tweetJson.get("full_text").replace("@CryptoldeaTest", "")
+
+                        if 'https' in message:
+                            indexOfHttps = message.index('https')
+                            message = fix_message(message[:indexOfHttps])
+                        else:
+                            message = fix_message(message)
 
                         print(replyJson)
 
@@ -150,6 +164,7 @@ while(True):
                             flag = True
 
                     if not flag:
+                        flagNoTweets = False
                         print(tweetJson.get("full_text"))
                         print(tweetJson)
                         print(tweetJson.get("user").get("screen_name"))
@@ -158,6 +173,8 @@ while(True):
                         if 'https' in message:
                             indexOfHttps = message.index('https')
                             message = fix_message(message[:indexOfHttps])
+                        else:
+                            message = fix_message(message)
 
                         message = gibberish() + message + gibberish()
 
@@ -170,6 +187,7 @@ while(True):
                             twythonAPI.update_status(status=message, in_reply_to_status_id=tweetJson.get("id"))
                         tweetIds.append(tweetJson.get("id"))
 
+
                 tweetCount += len(new_tweets)
                 print("Downloaded {0} tweets".format(tweetCount))
                 max_id = new_tweets[-1].id
@@ -179,5 +197,13 @@ while(True):
                 break
 
     print ("Downloaded {0} tweets, Saved to {1}".format(tweetCount, fName))
+    count = count+1
+    if(count % 10 == 0):
+        if flagNoTweets:
+            message = gibberish() + gibberish()
+            twythonAPI.update_status(status=message)
+            words.append("word")
+
+    flagNoTweets = True
     time.sleep(120)
 
